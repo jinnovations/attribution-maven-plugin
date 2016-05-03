@@ -4,6 +4,7 @@ public class DependencyOverride {
 
     private String forDependency;
     private String projectUrl;
+    private String downloadUrl;
     private ProjectDependencyLicense license;
 
     public String getForDependency() {
@@ -20,6 +21,14 @@ public class DependencyOverride {
 
     public void setProjectUrl(String projectUrl) {
         this.projectUrl = projectUrl;
+    }
+
+    public String getDownloadUrl() {
+        return downloadUrl;
+    }
+
+    public void setDownloadUrl(String downloadUrl) {
+        this.downloadUrl = downloadUrl;
     }
 
     public ProjectDependencyLicense getLicense() {

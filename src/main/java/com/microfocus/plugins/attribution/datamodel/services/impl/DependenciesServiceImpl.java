@@ -79,31 +79,8 @@ public class DependenciesServiceImpl implements DependenciesService {
 
                 String projectUrl = pluginProject.getUrl();
                 List<ProjectDependencyLicense> licenses = DependencyUtils.toProjectLicenses(artifactProject.getLicenses());
-
-                DependencyOverride dependencyOverride = projectDependencyOverrides.get(artifact.getGroupId() + ":" + artifact.getArtifactId());
-                if (dependencyOverride != null) {
-                    if (StringUtils.isNotBlank(dependencyOverride.getProjectUrl())) {
-                        projectUrl = dependencyOverride.getProjectUrl();
-                    }
-
-                    ProjectDependencyLicense projectLicense = dependencyOverride.getLicense();
-                    if (projectLicense != null) {
-                        licenses = Arrays.asList(projectLicense);
-                    }
-                }
-
-                ProjectDependency dependency = new ProjectDependency();
-                dependency.setGroupId(artifact.getGroupId());
-                dependency.setArtifactId(artifact.getArtifactId());
-                dependency.setVersion(artifact.getVersion());
-                dependency.setProjectUrl(projectUrl);
-                dependency.setType(artifact.getType());
-                dependency.setLicenses(licenses);
-
-                String name = StringUtils.defaultIfBlank(artifactProject.getName(), artifact.getArtifactId());
-                dependency.setName(name);
-
                 List<String> downloadUrls = new ArrayList<String>();
+
                 for (ArtifactRepository artifactRepository : artifactProject.getRemoteArtifactRepositories()) {
                     String downloadUrl = repoUtils.getDependencyUrlFromRepository(artifact, artifactRepository);
                     if (dependencyExistsInRepo(repoUtils, artifactRepository, artifact)) {
@@ -115,6 +92,31 @@ public class DependenciesServiceImpl implements DependenciesService {
                     }
                 }
 
+                DependencyOverride dependencyOverride = projectDependencyOverrides.get(artifact.getGroupId() + ":" + artifact.getArtifactId());
+                if (dependencyOverride != null) {
+                    if (StringUtils.isNotBlank(dependencyOverride.getProjectUrl())) {
+                        projectUrl = dependencyOverride.getProjectUrl();
+                    }
+
+                    if (StringUtils.isNotBlank(dependencyOverride.getDownloadUrl())) {
+                        downloadUrls = Arrays.asList(dependencyOverride.getDownloadUrl());
+                    }
+
+                    if (dependencyOverride.getLicense() != null) {
+                        licenses = Arrays.asList(dependencyOverride.getLicense());
+                    }
+                }
+
+                String name = StringUtils.defaultIfBlank(artifactProject.getName(), artifact.getArtifactId());
+
+                ProjectDependency dependency = new ProjectDependency();
+                dependency.setGroupId(artifact.getGroupId());
+                dependency.setArtifactId(artifact.getArtifactId());
+                dependency.setVersion(artifact.getVersion());
+                dependency.setProjectUrl(projectUrl);
+                dependency.setType(artifact.getType());
+                dependency.setLicenses(licenses);
+                dependency.setName(name);
                 dependency.setDownloadUrls(downloadUrls);
 
                 projectDependencies.add(dependency);

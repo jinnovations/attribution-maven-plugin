@@ -32,6 +32,15 @@ import freemarker.template.TemplateExceptionHandler;
 
 @Component(role = ReportsService.class)
 public class ReportsServiceImpl implements ReportsService {
+    private Configuration templateConfig;
+
+    public ReportsServiceImpl() {
+        templateConfig = new Configuration(Configuration.VERSION_2_3_24);
+        templateConfig.setDefaultEncoding("UTF-8");
+        templateConfig.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
+        templateConfig.setLogTemplateExceptions(false);
+    }
+
     @Override
     public void createThirdPartyLicensingCsvFile(String productVersionAndRelease, List<ProjectDependency> projectDependencies, File outputFile) {
         OutputStreamWriter outputStreamWriter = null;
@@ -134,6 +143,8 @@ public class ReportsServiceImpl implements ReportsService {
     @Override
     public void performTransformations(List<ProjectDependency> projectDependencies, File templatesFolder, Transformation[] transformations) {
         try {
+            templateConfig.setDirectoryForTemplateLoading(templatesFolder);
+
             Configuration cfg = new Configuration(Configuration.VERSION_2_3_24);
             cfg.setDefaultEncoding("UTF-8");
             cfg.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
@@ -141,18 +152,30 @@ public class ReportsServiceImpl implements ReportsService {
             cfg.setDirectoryForTemplateLoading(templatesFolder);
 
             if (projectDependencies != null && transformations != null) {
-                Map<String, Object> dependencyMap = new HashMap<String, Object>();
-                dependencyMap.put("dependencies", projectDependencies);
-
                 for (Transformation transformation : transformations) {
-                    Template temp = cfg.getTemplate(transformation.getTemplate());
+                    Template template = cfg.getTemplate(transformation.getTemplate());
                     FileWriter writer = new FileWriter(transformation.getOutputFile());
 
-                    temp.process(dependencyMap, writer);
+                    performTransformation(projectDependencies, template, writer);
                 }
             }
-        } catch (Exception e) {
-            throw new DataModelException("Unable to perform template transformations.", e);
+        } catch (IOException e) {
+            throw new DataModelException("Unable to perform template transformation.", e);
         }
+    }
+
+    public void performTransformation(List<ProjectDependency> projectDependencies, Template template, Writer output) {
+        try {
+            Map<String, Object> dependencyMap = new HashMap<String, Object>();
+            dependencyMap.put("dependencies", projectDependencies);
+
+            template.process(dependencyMap, output);
+        } catch (Exception e) {
+            throw new DataModelException("Unable to perform template transformation.", e);
+        }
+    }
+
+    public Configuration getTemplateConfig() {
+        return templateConfig;
     }
 }

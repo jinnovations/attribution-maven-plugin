@@ -66,7 +66,7 @@ public class AttributionMojo extends AbstractMojo {
 
         if (csvReportFile != null) {
             getLog().info("Writing csv report file: " + csvReportFile.getAbsolutePath());
-            reportsService.createThirdPartyLicensingCsvFile("SSPR 4.0", projectDependencies, csvReportFile);
+            reportsService.createThirdPartyLicensingCsvFile("Self Service Password Reset 4.0.0", projectDependencies, csvReportFile);
         }
 
         if (transformations != null && transformations.length > 0) {

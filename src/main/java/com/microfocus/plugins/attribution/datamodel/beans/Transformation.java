@@ -7,6 +7,14 @@ public class Transformation {
     private String template;
     private File outputFile;
 
+    public Transformation() {
+    }
+
+    public Transformation(String template, File outputFile) {
+        this.template = template;
+        this.outputFile = outputFile;
+    }
+
     public String getTemplate() {
         return template;
     }
