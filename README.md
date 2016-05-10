@@ -19,7 +19,7 @@ This plugin came out of the need to get some of the same information produced by
 <plugin>
     <groupId>com.github.jinnovations</groupId>
     <artifactId>attribution-maven-plugin</artifactId>
-    <version>0.9.1-SNAPSHOT</version>
+    <version>${attribution-maven-plugin.version}</version>
     <executions>
         <execution>
             <goals>
