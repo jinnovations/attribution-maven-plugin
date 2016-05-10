@@ -38,6 +38,8 @@ import com.microfocus.plugins.attribution.datamodel.utils.DependencyUtils;
 import com.microfocus.plugins.attribution.datamodel.utils.ServiceLog;
 import com.microfocus.plugins.attribution.datamodel.utils.ServiceLog.LogLevel;
 
+import edu.emory.mathcs.backport.java.util.Collections;
+
 @Component(role = DependenciesService.class)
 public class DependenciesServiceImpl implements DependenciesService {
     @Requirement private MavenProjectBuilder mavenProjectBuilder;
@@ -127,7 +129,7 @@ public class DependenciesServiceImpl implements DependenciesService {
             throw new DataModelException("An error occurred building the list of project dependencies.", e);
         }
 
-        projectDependencies.sort(byName());
+        Collections.sort(projectDependencies, byName());
 
         return projectDependencies;
     }

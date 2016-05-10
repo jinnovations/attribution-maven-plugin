@@ -3,7 +3,7 @@
 
     <groupId>com.github.jinnovations</groupId>
     <artifactId>attribution-maven-plugin</artifactId>
-    <version>0.9.2-SNAPSHOT</version>
+    <version>0.9.4-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <name>Attribution Maven Plugin</name>
@@ -12,6 +12,11 @@
     The Attribution Maven Plugin is a tool for producing information about a project's dependencies, in a way that can be consumed by external reporting tools. It currently leverages the Maven Project Info Reports Plugin (https://maven.apache.org/components/plugins/maven-project-info-reports-plugin/) to obtain all of a project's data, and then output the information to an XML file, such as: target/attribution.xml.
     This plugin came from the need to get some of the same information produced by the Maven Project Info Reports Plugin, and have it ready to be consumed by tools which may require input in a certain format, such as a CSV. By producing an attribution XML file, scripts can be created to translate the data into these other consumable formats.
     </description>
+
+    <properties>
+        <maven.compiler.source>1.7</maven.compiler.source>
+        <maven.compiler.target>1.7</maven.compiler.target>
+    </properties>
 
     <profiles>
         <profile>
@@ -76,6 +81,15 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.5.1</version>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.codehaus.plexus</groupId>
                 <artifactId>plexus-component-metadata</artifactId>
