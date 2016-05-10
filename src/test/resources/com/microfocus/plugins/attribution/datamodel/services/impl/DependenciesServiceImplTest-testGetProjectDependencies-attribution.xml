@@ -287,7 +287,7 @@
             </license>
          </licenses>
          <downloadUrls class="java.util.ArrayList">
-            <string>file:///C:\Users\James\Work\projects\sspr\trunk\SSPR/local-maven-repo/com/novell/security/nmas/ChallengeResponseLCM/2013.04.18/ChallengeResponseLCM-2013.04.18.jar</string>
+            <string>ftp://sdk.provo.novell.com/ndk/nmas/builds/cross_platform/novell-nmas-devel-2009.11.11-cross_platform.zip</string>
          </downloadUrls>
       </dependency>
       <dependency>
@@ -1232,7 +1232,7 @@
          <groupId>com.novell.security.nmas</groupId>
          <artifactId>jsso</artifactId>
          <version>2003.05.06</version>
-         <projectUrl>https://www.novell.com/developer/ndk/novell_modular_authentication_service.html</projectUrl>
+         <projectUrl>https://www.novell.com/developer/ndk/novell_secretstore_developer_kit_for_java.html</projectUrl>
          <type>jar</type>
          <licenses class="java.util.ArrayList">
             <license>
@@ -1241,7 +1241,7 @@
             </license>
          </licenses>
          <downloadUrls class="java.util.ArrayList">
-            <string>file:///C:\Users\James\Work\projects\sspr\trunk\SSPR/local-maven-repo/com/novell/security/nmas/jsso/2003.05.06/jsso-2003.05.06.jar</string>
+            <string>ftp://sdk.provo.novell.com/ndk/nssoj/builds/cross_platform/novell-nssoj-devel-2006.02.17-1cross_platform.zip</string>
          </downloadUrls>
       </dependency>
       <dependency>
@@ -1266,7 +1266,7 @@
          <groupId>com.novell.security.nmas</groupId>
          <artifactId>ldap</artifactId>
          <version>2013.04.26</version>
-         <projectUrl>https://www.novell.com/developer/ndk/novell_modular_authentication_service.html</projectUrl>
+         <projectUrl>https://www.novell.com/developer/ndk/ldap_classes_for_java.html</projectUrl>
          <type>jar</type>
          <licenses class="java.util.ArrayList">
             <license>
@@ -1275,7 +1275,7 @@
             </license>
          </licenses>
          <downloadUrls class="java.util.ArrayList">
-            <string>file:///C:\Users\James\Work\projects\sspr\trunk\SSPR/local-maven-repo/com/novell/security/nmas/ldap/2013.04.26/ldap-2013.04.26.jar</string>
+            <string>https://www.novell.com/developer/ndk/ldap_classes_for_java/novell-jldap-devel-2013.08.30.1433-xplat.zip</string>
          </downloadUrls>
       </dependency>
       <dependency>
@@ -1309,7 +1309,7 @@
             </license>
          </licenses>
          <downloadUrls class="java.util.ArrayList">
-            <string>file:///C:\Users\James\Work\projects\sspr\trunk\SSPR/local-maven-repo/com/novell/security/nmas/nmasclient/2013.04.26/nmasclient-2013.04.26.jar</string>
+            <string>ftp://sdk.provo.novell.com/ndk/nmas/builds/cross_platform/novell-nmas-devel-2009.11.11-cross_platform.zip</string>
          </downloadUrls>
       </dependency>
       <dependency>
@@ -1326,7 +1326,7 @@
             </license>
          </licenses>
          <downloadUrls class="java.util.ArrayList">
-            <string>file:///C:\Users\James\Work\projects\sspr\trunk\SSPR/local-maven-repo/com/novell/security/nmas/NMASToolkit/2013.04.26/NMASToolkit-2013.04.26.jar</string>
+            <string>ftp://sdk.provo.novell.com/ndk/nmas/builds/cross_platform/novell-nmas-devel-2009.11.11-cross_platform.zip</string>
          </downloadUrls>
       </dependency>
       <dependency>

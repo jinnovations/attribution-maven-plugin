@@ -16,14 +16,12 @@ import org.apache.maven.settings.Settings;
 
 import com.microfocus.plugins.attribution.datamodel.beans.DependencyOverride;
 import com.microfocus.plugins.attribution.datamodel.beans.ProjectDependency;
-import com.microfocus.plugins.attribution.datamodel.beans.Transformation;
 import com.microfocus.plugins.attribution.datamodel.services.DependenciesService;
 import com.microfocus.plugins.attribution.datamodel.services.ReportsService;
 
 @Mojo(name = "generate-reports", requiresProject = true, requiresDependencyResolution = ResolutionScope.TEST)
 public class AttributionMojo extends AbstractMojo {
-    @Component DependenciesService dependenciesService;
-    @Component ReportsService reportsService;
+    // Injected plugin parameters
 
     @Parameter(defaultValue = "${project}", readonly = true, required = true)
     protected MavenProject project;
@@ -31,23 +29,21 @@ public class AttributionMojo extends AbstractMojo {
     @Parameter(defaultValue = "${settings}", readonly = true, required = true)
     protected Settings settings;
 
-    @Parameter(property = "localRepository", readonly = true)
+    @Parameter(readonly = true)
     protected ArtifactRepository localRepository;
 
-    @Parameter(property = "outputFile", readonly = true)
+    @Parameter(readonly = true)
+    protected DependencyOverride[] dependencyOverrides;
+
+    @Parameter(defaultValue = "${project.build.directory}/attribution.xml", readonly = true, required = true)
     protected File outputFile;
 
-    @Parameter(property = "csvReportFile", readonly = true)
-    protected File csvReportFile;
+    @Parameter(readonly = true, required = false)
+    protected boolean forceRegeneration;
 
-    @Parameter(property = "templatesFolder", readonly = true)
-    protected File templatesFolder;
-
-    @Parameter(property = "transformations", readonly = true)
-    protected Transformation[] transformations;
-
-    @Parameter(property = "dependencyOverrides", readonly = true)
-    protected DependencyOverride[] dependencyOverrides;
+    // Injected services
+    @Component DependenciesService dependenciesService;
+    @Component ReportsService reportsService;
 
     // ----------------------------------------------------------------------
     // Public methods
@@ -55,23 +51,22 @@ public class AttributionMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        getLog().info("Building project dependencies list...");
+        File pomFile = project.getFile();
 
-        List<ProjectDependency> projectDependencies = dependenciesService.getProjectDependencies(project, settings, localRepository, dependencyOverrides);
+        if (pomFile.exists()) {
+            boolean outputFileOutOfDate = pomFile.lastModified() > outputFile.lastModified();
 
-        if (outputFile != null) {
-            getLog().info("Writing output file: " + outputFile.getAbsolutePath());
-            reportsService.createThirdPartyLicensingXmlFile(projectDependencies, outputFile);
-        }
+            if (outputFileOutOfDate || forceRegeneration) {
+                getLog().info("Building project dependencies list...");
+                List<ProjectDependency> projectDependencies = dependenciesService.getProjectDependencies(project, settings, localRepository, dependencyOverrides);
 
-        if (csvReportFile != null) {
-            getLog().info("Writing csv report file: " + csvReportFile.getAbsolutePath());
-            reportsService.createThirdPartyLicensingCsvFile("Self Service Password Reset 4.0.0", projectDependencies, csvReportFile);
-        }
-
-        if (transformations != null && transformations.length > 0) {
-            getLog().info("Performing transformations...");
-            reportsService.performTransformations(projectDependencies, templatesFolder, transformations);
+                getLog().info("Writing output file: " + outputFile.getAbsolutePath());
+                reportsService.createAttributionXmlFile(projectDependencies, outputFile);
+            } else {
+                getLog().info("Maven project file hasn't changed.  Output file does not need to be regenerated: " + outputFile.getAbsolutePath());
+            }
+        } else {
+            getLog().info("A maven project file is required.");
         }
     }
 }

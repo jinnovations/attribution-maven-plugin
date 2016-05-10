@@ -1,5 +1,6 @@
 package com.microfocus.plugins.attribution.datamodel.beans;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.simpleframework.xml.Element;
@@ -16,10 +17,10 @@ public class ProjectDependency {
     @Element(required = false) String type;
 
     @ElementList(required = false)
-    List<ProjectDependencyLicense> licenses;
+    ArrayList<ProjectDependencyLicense> licenses;
 
     @ElementList(required = false)
-    List<String> downloadUrls;
+    ArrayList<String> downloadUrls;
 
     public ProjectDependency() {
     }
@@ -31,8 +32,8 @@ public class ProjectDependency {
         this.version = version;
         this.projectUrl = projectUrl;
         this.type = type;
-        this.licenses = licenses;
-        this.downloadUrls = downloadUrls;
+        this.licenses = new ArrayList<ProjectDependencyLicense>(licenses);
+        this.downloadUrls = new ArrayList<String>(downloadUrls);
     }
 
     public String getName() {
@@ -88,7 +89,7 @@ public class ProjectDependency {
     }
 
     public void setLicenses(List<ProjectDependencyLicense> licenses) {
-        this.licenses = licenses;
+        this.licenses = new ArrayList<ProjectDependencyLicense>(licenses);
     }
 
     public List<String> getDownloadUrls() {
@@ -96,7 +97,7 @@ public class ProjectDependency {
     }
 
     public void setDownloadUrls(List<String> downloadUrls) {
-        this.downloadUrls = downloadUrls;
+        this.downloadUrls = new ArrayList<String>(downloadUrls);
     }
 
     @Override

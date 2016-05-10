@@ -1,4 +1,0 @@
-ID#,TAG / Micro Focus Product Version and Release,3rd Party Product Type (Commercial or Open Source),Comments,3rd Party Product Name,3rd Party Libary File,Link to 3rd Party Product Home Page (Open Source Only),Link to 3rd Party Product Release Download Page (Open Source Only),3rd Party Product Version and Release,License Name,"Link to 3rd Party Contract, EULA or License",License Evidence,Link to Redist List (Commercial only -- if applicable),Modified?,Distributed in Binary or Source Form,"Distributed, Hosted or Both","Link Type (dynamic, static, in-line) (Open Source Only)"
-<#list dependencies as dependency>
-ID#${dependency?counter},Self Service Password Reset 4.0,Open Source,${dependency.name}
-</#list>
