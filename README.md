@@ -7,7 +7,7 @@ This plugin came out of the need to get some of the same information produced by
 ### Configuration
 
 * `outputFile`
-  * Foo (defaults to `target/attribution.xml`)
+  * Location of the output attribution XML file (defaults to `target/attribution.xml`)
 * `forceRegeneration`
   * Whether or not regeneration of the attribution.xml file should be forced (defaults to `false`).  Normally, if the plugin detects the timestamp of the attribution.xml file is later than the project's pom.xml file, it will not go through the process of regenerating it.  This parameter will cause it to be regenerated, regardless of file timestamps.
 * `dependencyOverrides`
