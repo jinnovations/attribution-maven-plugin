@@ -19,7 +19,7 @@ import com.microfocus.plugins.attribution.datamodel.beans.ProjectDependency;
 import com.microfocus.plugins.attribution.datamodel.services.DependenciesService;
 import com.microfocus.plugins.attribution.datamodel.services.ReportsService;
 
-@Mojo(name = "generate-reports", requiresProject = true, requiresDependencyResolution = ResolutionScope.TEST)
+@Mojo(name = "generate-attribution-file", requiresProject = true, requiresDependencyResolution = ResolutionScope.TEST)
 public class AttributionMojo extends AbstractMojo {
     // Injected plugin parameters
 
