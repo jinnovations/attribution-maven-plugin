@@ -3,7 +3,7 @@
 
     <groupId>com.github.jinnovations</groupId>
     <artifactId>attribution-maven-plugin</artifactId>
-    <version>0.9.5-SNAPSHOT</version>
+    <version>0.9.6-SNAPSHOT</version>
     <packaging>maven-plugin</packaging>
 
     <name>Attribution Maven Plugin</name>

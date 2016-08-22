@@ -32,13 +32,13 @@ public class AttributionMojo extends AbstractMojo {
     @Parameter(readonly = true)
     protected ArtifactRepository localRepository;
 
-    @Parameter(readonly = true)
+    @Parameter()
     protected DependencyOverride[] dependencyOverrides;
 
-    @Parameter(defaultValue = "${project.build.directory}/attribution.xml", readonly = true, required = true)
+    @Parameter(defaultValue = "${project.build.directory}/attribution.xml", required = true)
     protected File outputFile;
 
-    @Parameter(readonly = true, required = false)
+    @Parameter(required = false)
     protected boolean forceRegeneration;
 
     // Injected services

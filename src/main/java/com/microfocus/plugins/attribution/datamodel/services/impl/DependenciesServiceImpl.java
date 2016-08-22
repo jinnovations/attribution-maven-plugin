@@ -160,7 +160,7 @@ public class DependenciesServiceImpl implements DependenciesService {
      */
     private DependencyNode resolveProject(MavenProject project) {
         try {
-            ArtifactFilter artifactFilter = new ScopeArtifactFilter(Artifact.SCOPE_TEST);
+            ArtifactFilter artifactFilter = new ScopeArtifactFilter(Artifact.SCOPE_RUNTIME);
             return dependencyGraphBuilder.buildDependencyGraph(project, artifactFilter);
         } catch (DependencyGraphBuilderException e) {
             throw new DataModelException("Unable to build dependency tree.", e);
