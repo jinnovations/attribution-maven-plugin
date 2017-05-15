@@ -29,6 +29,12 @@ public class ReportsServiceImpl implements ReportsService {
     @Override
     public void createAttributionXmlFile(List<ProjectDependency> projectDependencies, File outputFile) {
         try {
+            // ensure parent dirs exist
+            final File parentFile = outputFile.getParentFile();
+            if (parentFile != null) {
+                parentFile.mkdirs();
+            }
+
             Serializer serializer = new Persister();
 
             AttributionReport attributionReport = new AttributionReport();
