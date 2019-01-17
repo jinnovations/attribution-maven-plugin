@@ -54,7 +54,7 @@ public class DependenciesServiceImpl implements DependenciesService {
     private ServiceLog log = new ServiceLog();
 
     @Override
-    public List<ProjectDependency> getProjectDependencies(MavenProject project, Settings settings, ArtifactRepository localRepository, DependencyOverride[] dependencyOverrides) {
+    public List<ProjectDependency> getProjectDependencies(MavenProject project, Settings settings, ArtifactRepository localRepository, DependencyOverride[] dependencyOverrides, boolean skipDownloadUrl) {
         List<ProjectDependency> projectDependencies = new ArrayList<ProjectDependency>();
         Map<String, DependencyOverride> projectDependencyOverrides = new HashMap<String, DependencyOverride>();
 
@@ -83,17 +83,18 @@ public class DependenciesServiceImpl implements DependenciesService {
                 List<ProjectDependencyLicense> licenses = DependencyUtils.toProjectLicenses(artifactProject.getLicenses());
                 List<String> downloadUrls = new ArrayList<String>();
 
-                for (ArtifactRepository artifactRepository : artifactProject.getRemoteArtifactRepositories()) {
-                    String downloadUrl = repoUtils.getDependencyUrlFromRepository(artifact, artifactRepository);
-                    if (dependencyExistsInRepo(repoUtils, artifactRepository, artifact)) {
-                        downloadUrls.add(downloadUrl);
-                    }
-
-                    if (log.isInfoEnabled()) {
-                        System.out.print('.');
+                if ( !skipDownloadUrl) {
+                    for (ArtifactRepository artifactRepository : artifactProject.getRemoteArtifactRepositories()) {
+                        String downloadUrl = repoUtils.getDependencyUrlFromRepository(artifact, artifactRepository);
+                        if (dependencyExistsInRepo(repoUtils, artifactRepository, artifact)) {
+                            downloadUrls.add(downloadUrl);
+                        }
+    
+                        if (log.isInfoEnabled()) {
+                            System.out.print('.');
+                        }
                     }
                 }
-
                 DependencyOverride dependencyOverride = projectDependencyOverrides.get(artifact.getGroupId() + ":" + artifact.getArtifactId());
                 if (dependencyOverride != null) {
                     if (StringUtils.isNotBlank(dependencyOverride.getProjectUrl())) {
