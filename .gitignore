@@ -2,3 +2,5 @@
 /target
 /.classpath
 /.settings
+/.idea
+/attribution-maven-plugin.iml
