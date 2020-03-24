@@ -54,7 +54,7 @@ public class DependenciesServiceImpl implements DependenciesService {
     private ServiceLog log = new ServiceLog();
 
     @Override
-    public List<ProjectDependency> getProjectDependencies(MavenProject project, Settings settings, ArtifactRepository localRepository, DependencyOverride[] dependencyOverrides, boolean skipDownloadUrl) {
+    public List<ProjectDependency> getProjectDependencies(MavenProject project, Settings settings, ArtifactRepository localRepository, DependencyOverride[] dependencyOverrides, boolean skipDownloadUrl, boolean includeTransitiveDependencies) {
         List<ProjectDependency> projectDependencies = new ArrayList<ProjectDependency>();
         Map<String, DependencyOverride> projectDependencyOverrides = new HashMap<String, DependencyOverride>();
 
@@ -69,7 +69,7 @@ public class DependenciesServiceImpl implements DependenciesService {
         Dependencies dependencies = new Dependencies(project, dependencyNode, classesAnalyzer);
 
         try {
-            List<Artifact> alldeps = dependencies.getAllDependencies();
+            List<Artifact> alldeps = includeTransitiveDependencies ? dependencies.getAllDependencies() : dependencies.getProjectDependencies();
 
             if (log.isInfoEnabled()) {
                 System.out.print("[INFO] Reading dependency information from available repositories.");
@@ -89,7 +89,7 @@ public class DependenciesServiceImpl implements DependenciesService {
                         if (dependencyExistsInRepo(repoUtils, artifactRepository, artifact)) {
                             downloadUrls.add(downloadUrl);
                         }
-    
+
                         if (log.isInfoEnabled()) {
                             System.out.print('.');
                         }

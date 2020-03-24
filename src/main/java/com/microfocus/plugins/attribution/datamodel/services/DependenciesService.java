@@ -10,5 +10,5 @@ import com.microfocus.plugins.attribution.datamodel.beans.DependencyOverride;
 import com.microfocus.plugins.attribution.datamodel.beans.ProjectDependency;
 
 public interface DependenciesService {
-    List<ProjectDependency> getProjectDependencies(MavenProject project, Settings settings, ArtifactRepository localRepository, DependencyOverride[] dependencyOverrides, boolean skipDownloadUrl);
+    List<ProjectDependency> getProjectDependencies(MavenProject project, Settings settings, ArtifactRepository localRepository, DependencyOverride[] dependencyOverrides, boolean skipDownloadUrl, boolean includeTransitiveDependencies);
 }

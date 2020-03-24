@@ -44,6 +44,9 @@ public class AttributionMojo extends AbstractMojo {
     @Parameter(defaultValue = "false", required = false)
     protected boolean skipDownloadUrl;
 
+    @Parameter(defaultValue = "true", required = false)
+    protected boolean includeTransitiveDependencies;
+
     // Injected services
     @Component DependenciesService dependenciesService;
     @Component ReportsService reportsService;
@@ -61,7 +64,7 @@ public class AttributionMojo extends AbstractMojo {
 
             if (outputFileOutOfDate || forceRegeneration) {
                 getLog().info("Building project dependencies list...");
-                List<ProjectDependency> projectDependencies = dependenciesService.getProjectDependencies(project, settings, localRepository, dependencyOverrides, skipDownloadUrl);
+                List<ProjectDependency> projectDependencies = dependenciesService.getProjectDependencies(project, settings, localRepository, dependencyOverrides, skipDownloadUrl, includeTransitiveDependencies);
 
                 getLog().info("Writing output file: " + outputFile.getAbsolutePath());
                 reportsService.createAttributionXmlFile(projectDependencies, outputFile);
