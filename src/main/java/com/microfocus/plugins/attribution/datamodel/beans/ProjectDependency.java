@@ -1,6 +1,7 @@
 package com.microfocus.plugins.attribution.datamodel.beans;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.simpleframework.xml.Element;
@@ -8,7 +9,9 @@ import org.simpleframework.xml.ElementList;
 import org.simpleframework.xml.Root;
 
 @Root(name = "dependency")
-public class ProjectDependency {
+public class ProjectDependency implements Comparable<ProjectDependency> {
+    private static Comparator<? super ProjectDependency> DEFAULT_COMPARATOR = byNameComparator();
+
     @Element(required = false) String name;
     @Element(required = false) String groupId;
     @Element(required = false) String artifactId;
@@ -103,5 +106,20 @@ public class ProjectDependency {
     @Override
     public String toString() {
         return "Dependency [groupId=" + groupId + ", artifactId=" + artifactId + ", version=" + version + ", projectUrl=" + projectUrl + ", type=" + type + ", licenses=" + licenses + ", downloadUrls=" + downloadUrls + "]";
+    }
+
+    @Override
+    public int compareTo( final ProjectDependency o )
+    {
+        return DEFAULT_COMPARATOR.compare( this, o );
+    }
+
+    private static Comparator<? super ProjectDependency> byNameComparator() {
+        return new Comparator<ProjectDependency>() {
+            @Override
+            public int compare( final ProjectDependency pd1, final ProjectDependency pd2) {
+                return pd1.getName().compareToIgnoreCase(pd2.getName());
+            }
+        };
     }
 }
