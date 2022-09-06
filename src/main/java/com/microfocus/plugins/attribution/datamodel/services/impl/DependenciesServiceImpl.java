@@ -1,12 +1,11 @@
 package com.microfocus.plugins.attribution.datamodel.services.impl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.microfocus.plugins.attribution.datamodel.DataModelException;
+import com.microfocus.plugins.attribution.datamodel.beans.DependencyOverride;
+import com.microfocus.plugins.attribution.datamodel.beans.ProjectDependency;
+import com.microfocus.plugins.attribution.datamodel.beans.ProjectDependencyLicense;
+import com.microfocus.plugins.attribution.datamodel.services.DependenciesService;
+import com.microfocus.plugins.attribution.datamodel.utils.DependencyUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
@@ -16,6 +15,7 @@ import org.apache.maven.artifact.repository.metadata.RepositoryMetadataManager;
 import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.artifact.resolver.filter.ArtifactFilter;
 import org.apache.maven.artifact.resolver.filter.ScopeArtifactFilter;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectBuilder;
 import org.apache.maven.project.ProjectBuildingException;
@@ -29,16 +29,18 @@ import org.apache.maven.shared.jar.classes.JarClassesAnalysis;
 import org.codehaus.plexus.component.annotations.Component;
 import org.codehaus.plexus.component.annotations.Requirement;
 
-import com.microfocus.plugins.attribution.datamodel.DataModelException;
-import com.microfocus.plugins.attribution.datamodel.beans.DependencyOverride;
-import com.microfocus.plugins.attribution.datamodel.beans.ProjectDependency;
-import com.microfocus.plugins.attribution.datamodel.beans.ProjectDependencyLicense;
-import com.microfocus.plugins.attribution.datamodel.services.DependenciesService;
-import com.microfocus.plugins.attribution.datamodel.utils.DependencyUtils;
-import com.microfocus.plugins.attribution.datamodel.utils.ServiceLog;
-import com.microfocus.plugins.attribution.datamodel.utils.ServiceLog.LogLevel;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
-import edu.emory.mathcs.backport.java.util.Collections;
 
 @Component(role = DependenciesService.class)
 public class DependenciesServiceImpl implements DependenciesService {
@@ -51,119 +53,202 @@ public class DependenciesServiceImpl implements DependenciesService {
     @Requirement protected ArtifactFactory factory;
     @Requirement protected ArtifactResolver resolver;
 
-    private ServiceLog log = new ServiceLog();
-
     @Override
-    public List<ProjectDependency> getProjectDependencies(MavenProject project, Settings settings, ArtifactRepository localRepository, DependencyOverride[] dependencyOverrides, boolean skipDownloadUrl, boolean includeTransitiveDependencies) {
-        List<ProjectDependency> projectDependencies = new ArrayList<ProjectDependency>();
-        Map<String, DependencyOverride> projectDependencyOverrides = new HashMap<String, DependencyOverride>();
+    public List<ProjectDependency> getProjectDependencies(
+            final MavenProject project,
+            final Settings settings,
+            final ArtifactRepository localRepository,
+            final DependencyOverride[] dependencyOverrides,
+            final DependenciesContext dependenciesContext
+    ) {
+        final Map<String, DependencyOverride> projectDependencyOverrides = new HashMap<String, DependencyOverride>();
 
         if (dependencyOverrides != null) {
-            for (DependencyOverride dependencyOverride : dependencyOverrides) {
+            for ( final DependencyOverride dependencyOverride : dependencyOverrides) {
                 projectDependencyOverrides.put(dependencyOverride.getForDependency(), dependencyOverride);
             }
         }
 
-        RepositoryUtils repoUtils = new RepositoryUtils(log, wagonManager, settings, mavenProjectBuilder, factory, resolver, project.getRemoteArtifactRepositories(), project.getPluginArtifactRepositories(), localRepository, repositoryMetadataManager);
-        DependencyNode dependencyNode = resolveProject(project);
-        Dependencies dependencies = new Dependencies(project, dependencyNode, classesAnalyzer);
+        final Log log = dependenciesContext.getLog();
 
+        final RepositoryUtils repoUtils = new RepositoryUtils(log, wagonManager, settings, mavenProjectBuilder, factory, resolver, project.getRemoteArtifactRepositories(), project.getPluginArtifactRepositories(), localRepository, repositoryMetadataManager);
+        final DependencyNode dependencyNode = resolveProject(project);
+        final Dependencies dependencies = new Dependencies(project, dependencyNode, classesAnalyzer);
+
+        final List<ProjectDependency> projectDependencies;
         try {
-            List<Artifact> alldeps = includeTransitiveDependencies ? dependencies.getAllDependencies() : dependencies.getProjectDependencies();
+            final List<Artifact> alldeps = dependenciesContext.isIncludeTransitiveDependencies() ? dependencies.getAllDependencies() : dependencies.getProjectDependencies();
 
-            if (log.isInfoEnabled()) {
-                System.out.print("[INFO] Reading dependency information from available repositories.");
-            }
+            log.info("Reading dependency information from available repositories....");
 
-            for (Artifact artifact : alldeps) {
-                MavenProject pluginProject = mavenProjectBuilder.buildFromRepository(artifact, project.getRemoteArtifactRepositories(), localRepository);
-                MavenProject artifactProject = repoUtils.getMavenProjectFromRepository(artifact);
+            projectDependencies = processArtifacts( project, localRepository, projectDependencyOverrides, repoUtils, alldeps, dependenciesContext );
 
-                String projectUrl = pluginProject.getUrl();
-                List<ProjectDependencyLicense> licenses = DependencyUtils.toProjectLicenses(artifactProject.getLicenses());
-                List<String> downloadUrls = new ArrayList<String>();
-
-                if ( !skipDownloadUrl) {
-                    for (ArtifactRepository artifactRepository : artifactProject.getRemoteArtifactRepositories()) {
-                        String downloadUrl = repoUtils.getDependencyUrlFromRepository(artifact, artifactRepository);
-                        if (dependencyExistsInRepo(repoUtils, artifactRepository, artifact)) {
-                            downloadUrls.add(downloadUrl);
-                        }
-
-                        if (log.isInfoEnabled()) {
-                            System.out.print('.');
-                        }
-                    }
-                }
-                DependencyOverride dependencyOverride = projectDependencyOverrides.get(artifact.getGroupId() + ":" + artifact.getArtifactId());
-                if (dependencyOverride != null) {
-                    if (StringUtils.isNotBlank(dependencyOverride.getProjectUrl())) {
-                        projectUrl = dependencyOverride.getProjectUrl();
-                    }
-
-                    if (StringUtils.isNotBlank(dependencyOverride.getDownloadUrl())) {
-                        downloadUrls = Arrays.asList(dependencyOverride.getDownloadUrl());
-                    }
-
-                    if (dependencyOverride.getLicense() != null) {
-                        licenses = Arrays.asList(dependencyOverride.getLicense());
-                    }
-                }
-
-                String name = StringUtils.defaultIfBlank(artifactProject.getName(), artifact.getArtifactId());
-
-                ProjectDependency dependency = new ProjectDependency();
-                dependency.setGroupId(artifact.getGroupId());
-                dependency.setArtifactId(artifact.getArtifactId());
-                dependency.setVersion(artifact.getVersion());
-                dependency.setProjectUrl(projectUrl);
-                dependency.setType(artifact.getType());
-                dependency.setLicenses(licenses);
-                dependency.setName(name);
-                dependency.setDownloadUrls(downloadUrls);
-
-                projectDependencies.add(dependency);
-            }
-
-            System.out.println(); // End with a carriage return, so normal logging can continue
-        } catch (ProjectBuildingException e) {
-            throw new DataModelException("An error occurred building the list of project dependencies.", e);
+        } catch ( final ProjectBuildingException e) {
+            throw new DataModelException("An error occurred building the list of project dependencies: " + e.getMessage(), e);
         }
 
-        Collections.sort(projectDependencies, byName());
-
-        return projectDependencies;
+        final List<ProjectDependency> sortedList = new ArrayList<>( projectDependencies );
+        Collections.sort( sortedList );
+        return Collections.unmodifiableList( sortedList );
     }
 
-    private Comparator<? super ProjectDependency> byName() {
-        return new Comparator<ProjectDependency>() {
-            @Override
-            public int compare(ProjectDependency pd1, ProjectDependency pd2) {
-                return pd1.getName().compareToIgnoreCase(pd2.getName());
+    private List<ProjectDependency> processArtifacts(
+            final MavenProject project,
+            final ArtifactRepository localRepository,
+            final Map<String, DependencyOverride> projectDependencyOverrides,
+            final RepositoryUtils repoUtils,
+            final List<Artifact> alldeps,
+            final DependenciesContext dependenciesContext
+    )
+            throws ProjectBuildingException
+    {
+        final List<Callable<ProjectDependency>> callableList = new ArrayList<Callable<ProjectDependency>>();
+        for ( final Artifact artifact : alldeps )
+        {
+            callableList.add( new ProcessArtifactJob(
+                    project,
+                    localRepository,
+                    projectDependencyOverrides,
+                    repoUtils,
+                    artifact,
+                    dependenciesContext
+            ) );
+        }
+
+        final ExecutorService executor = Executors.newFixedThreadPool( dependenciesContext.getThreads() );
+
+        try {
+            final List<ProjectDependency> resultList = Collections.synchronizedList( new ArrayList<ProjectDependency>() );
+            for ( final Future<ProjectDependency> future : executor.invokeAll( callableList ) ) {
+                resultList.add( future.get() );
             }
-        };
+            return Collections.unmodifiableList( resultList );
+        }
+        catch ( final ExecutionException | InterruptedException e ) {
+            dependenciesContext.getLog().error( "error resolving project dependencies: " + e.getMessage(), e );
+        } finally {
+            executor.shutdown();
+        }
+
+        return Collections.emptyList();
     }
 
-    private boolean dependencyExistsInRepo(RepositoryUtils repoUtils, ArtifactRepository artifactRepository, Artifact artifact) {
-        // Don't show warnings and errors when testing URLs
-        LogLevel originalLogLevel = log.getLogLevel();
-        log.setLogLevel(LogLevel.NONE);
+    private class ProcessArtifactJob implements Callable<ProjectDependency>
+    {
+        private final MavenProject project;
+        private final ArtifactRepository localRepository;
+        private final Map<String, DependencyOverride> projectDependencyOverrides;
+        private final RepositoryUtils repoUtils;
+        private final Artifact artifact;
+        private final DependenciesContext dependenciesContext;
 
-        boolean dependencyExistsInRepo = repoUtils.dependencyExistsInRepo(artifactRepository, artifact);
+        public ProcessArtifactJob(
+                final MavenProject project,
+                final ArtifactRepository localRepository,
+                final Map<String, DependencyOverride> projectDependencyOverrides,
+                final RepositoryUtils repoUtils,
+                final Artifact artifact,
+                final DependenciesContext dependenciesContext
+        )
+        {
+            this.project = project;
+            this.localRepository = localRepository;
+            this.projectDependencyOverrides = projectDependencyOverrides;
+            this.repoUtils = repoUtils;
+            this.artifact = artifact;
+            this.dependenciesContext = dependenciesContext;
+        }
 
-        // Restore original log level
-        log.setLogLevel(originalLogLevel);
-        return dependencyExistsInRepo;
+        @Override
+        public ProjectDependency call()
+                throws Exception
+        {
+            return processArtifact( project, localRepository, projectDependencyOverrides, repoUtils, artifact, dependenciesContext );
+        }
     }
+
+    private ProjectDependency processArtifact(
+            final MavenProject project,
+            final ArtifactRepository localRepository,
+            final Map<String, DependencyOverride> projectDependencyOverrides,
+            final RepositoryUtils repoUtils,
+            final Artifact artifact,
+            final DependenciesContext dependenciesContext
+    )
+            throws ProjectBuildingException
+    {
+        final MavenProject pluginProject = mavenProjectBuilder.buildFromRepository( artifact, project.getRemoteArtifactRepositories(), localRepository );
+        final MavenProject artifactProject = repoUtils.getMavenProjectFromRepository( artifact );
+
+        String projectUrl = pluginProject.getUrl();
+        List<ProjectDependencyLicense> licenses = DependencyUtils.toProjectLicenses(artifactProject.getLicenses());
+        List<String> downloadUrls = calculateDownloadUrls( repoUtils, artifact, dependenciesContext, artifactProject );
+
+        final DependencyOverride dependencyOverride = projectDependencyOverrides.get( artifact.getGroupId() + ":" + artifact.getArtifactId());
+        if (dependencyOverride != null) {
+            if (StringUtils.isNotBlank(dependencyOverride.getProjectUrl())) {
+                projectUrl = dependencyOverride.getProjectUrl();
+            }
+
+            if (StringUtils.isNotBlank(dependencyOverride.getDownloadUrl())) {
+                downloadUrls = Collections.singletonList( dependencyOverride.getDownloadUrl() );
+            }
+
+            if (dependencyOverride.getLicense() != null) {
+                licenses = Collections.singletonList( dependencyOverride.getLicense() );
+            }
+        }
+
+        final String name = StringUtils.defaultIfBlank(artifactProject.getName(), artifact.getArtifactId());
+
+        final ProjectDependency dependency = new ProjectDependency();
+        dependency.setGroupId( artifact.getGroupId());
+        dependency.setArtifactId( artifact.getArtifactId());
+        dependency.setVersion( artifact.getVersion());
+        dependency.setProjectUrl(projectUrl);
+        dependency.setType( artifact.getType());
+        dependency.setLicenses(licenses);
+        dependency.setName(name);
+        dependency.setDownloadUrls(downloadUrls);
+
+        dependenciesContext.getLog().info( "resolved artifact: "
+                + artifact.getGroupId()
+                + ":"
+                + artifact.getArtifactId()
+                + ":"
+                + artifact.getVersion() );
+
+        return dependency;
+    }
+
+    private List<String> calculateDownloadUrls(
+            final RepositoryUtils repoUtils,
+            final Artifact artifact,
+            final DependenciesContext dependenciesContext,
+            final MavenProject artifactProject )
+    {
+        final List<String> downloadUrls = new ArrayList<>();
+
+        if ( !dependenciesContext.isSkipDownloadUrl() ) {
+            for ( final ArtifactRepository artifactRepository : artifactProject.getRemoteArtifactRepositories()) {
+                final String downloadUrl = repoUtils.getDependencyUrlFromRepository( artifact, artifactRepository);
+                if (repoUtils.dependencyExistsInRepo(artifactRepository, artifact)) {
+                    downloadUrls.add(downloadUrl);
+                }
+            }
+        }
+        return downloadUrls;
+    }
+
 
     /**
      * @return resolve the dependency tree
      */
-    private DependencyNode resolveProject(MavenProject project) {
+    private DependencyNode resolveProject( final MavenProject project) {
         try {
-            ArtifactFilter artifactFilter = new ScopeArtifactFilter(Artifact.SCOPE_RUNTIME);
+            final ArtifactFilter artifactFilter = new ScopeArtifactFilter(Artifact.SCOPE_RUNTIME);
             return dependencyGraphBuilder.buildDependencyGraph(project, artifactFilter);
-        } catch (DependencyGraphBuilderException e) {
+        } catch ( final DependencyGraphBuilderException e) {
             throw new DataModelException("Unable to build dependency tree.", e);
         }
     }
